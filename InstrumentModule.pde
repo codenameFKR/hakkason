@@ -1,69 +1,118 @@
-//楽器モジュール（クラス）の設計図
+// 楽器モジュール（クラス）の設計図
 class InstrumentModule implements Instrument {
 
-  Summer _summer; //複合音を作るための変数
+  Summer _summer;
   Oscil[] _waves;
-  MoogFilter _filter; //フィルター
-  float _vol;  // 音量
-
-  //ADSR
+  Oscil _fco;
+  MoogFilter _filter;
   ADSR _adsr;
-  float _atk; //音の立ち上がり
-  float _dec; //AtackからSustainまでの減衰
-  float _sus; //Atackで到達した最大音量からDecayを経て最終的に到達する音量
-  float _rel; //余韻
 
-// コンストラクタ:波形の種類，基音，倍音，カットオフ周波数，レゾナンス(CUTOFFの周波数付近を強調する度合い),ADSR
-  InstrumentModule(String wave, float baseFreq, float[] harmonics, float cutoff, float res, float vol, float atk, float dec, float sus, float rel) {
+  float _vol;
+  float _atk;
+  float _dec;
+  float _sus;
+  float _rel;
+
+  // // 以前の書き方も使えるようにする：波形1つ、フィルターはローパス
+  // InstrumentModule(String wave, float baseFreq, float[] harmonics, float cutoff, float res, float vol, float atk, float dec, float sus, float rel) {
+  //   this(new String[] { wave }, baseFreq, harmonics, cutoff, res, 0, vol, atk, dec, sus, rel);
+  // }
+
+  // // 波形1つ、フィルター種類を指定する版
+  // InstrumentModule(String wave, float baseFreq, float[] harmonics, float cutoff, float res, int filterMode, float vol, float atk, float dec, float sus, float rel) {
+  //   this(new String[] { wave }, baseFreq, harmonics, cutoff, res, filterMode, vol, atk, dec, sus, rel);
+  // }
+
+  // 波形を複数組み合わせる版
+  InstrumentModule(String[] waves, float baseFreq, float[] harmonics, float cutoff, float res, int filterMode, float fcoRate, float fcoAmount,float vol, float atk, float dec, float sus, float rel) {
     _vol = vol;
     _atk = atk;
     _dec = dec;
     _sus = sus;
     _rel = rel;
 
-    _summer = new Summer();
-    _waves = new Oscil[harmonics.length];
-    
-    // 配列の数だけ波形を作り、周波数と音量を計算してミキサーに繋ぐ
-    for (int i = 0; i < harmonics.length; i++) {
-      float freq = baseFreq * (i + 1);      // 倍音の周波数 (1倍, 2倍, 3倍...)
-      float amp = vol * harmonics[i];       // 倍音の音量 (基本音量 × 渡された比率)
-      
-      if (wave.equals("SINE")) {
-        _waves[i] = new Oscil(freq, amp, Waves.SINE);
-      } else if (wave.equals("SAW")) {
-        _waves[i] = new Oscil(freq, amp, Waves.SAW);
-      } else if (wave.equals("SQUARE")) {
-        _waves[i] = new Oscil(freq, amp, Waves.SQUARE);
-      } else if (wave.equals("TRIANGLE")) {
-        _waves[i] = new Oscil(freq, amp, Waves.TRIANGLE);
-      }
-      
-    
-      // 作った波形をミキサー(Summer)に接続
-      _waves[i].patch(_summer);
+    if (waves == null || waves.length == 0) {
+      waves = new String[] { "SINE" };
     }
 
-    // 4. フィルターの準備 (カットオフ周波数, レゾナンス, ローパスフィルター)
-    _filter = new MoogFilter(cutoff, res, MoogFilter.Type.LP);
-    
-    // ② 受け取ったADSRの数値を、内部の金庫に記憶しておく
+    if (harmonics == null || harmonics.length == 0) {
+      harmonics = new float[] { 1.0 };
+    }
+
+    _summer = new Summer();
+
+    int waveTotal = waves.length * harmonics.length;
+    _waves = new Oscil[waveTotal];
+
+    int index = 0;
+
+    for (int w = 0; w < waves.length; w++) {
+      Waveform waveform = getWaveform(waves[w]);
+
+      for (int i = 0; i < harmonics.length; i++) {
+        float freq = baseFreq * (i + 1);
+
+        // 複数波形を足すと音量が大きくなりすぎるので、波形数で割る
+        float amp = vol * harmonics[i] / waves.length;
+
+        _waves[index] = new Oscil(freq, amp, waveform);
+        _waves[index].patch(_summer);
+
+        index++;
+      }
+    }
+
+    _filter = new MoogFilter(cutoff, res, getFilterType(filterMode));
+
+    if (fcoRate > 0 && fcoAmount > 0) {
+      _fco = new Oscil(fcoRate, fcoAmount, Waves.SINE);
+      _fco.offset.setLastValue(cutoff);
+      _fco.patch(_filter.frequency);
+    }
+
     _adsr = new ADSR(vol, atk, dec, sus, rel);
 
-    // ★ 6. 音の通り道（パッチ）を直列に繋ぐ！
-    // 複数の波形(Summer) -> フィルター(MoogFilter) -> 音量制御(ADSR) -> 出力(out)
     _summer.patch(_filter).patch(_adsr).patch(out);
+  }
+
+  Waveform getWaveform(String wave) {
+    if (wave == null) {
+      return Waves.SINE;
+    }
+
+    wave = wave.toUpperCase();
+
+    if (wave.equals("SINE")) {
+      return Waves.SINE;
+    } else if (wave.equals("SAW")) {
+      return Waves.SAW;
+    } else if (wave.equals("SQUARE")) {
+      return Waves.SQUARE;
+    } else if (wave.equals("TRIANGLE")) {
+      return Waves.TRIANGLE;
+    }
+
+    return Waves.SINE;
+  }
+
+  MoogFilter.Type getFilterType(int filterMode) {
+    if (filterMode == 0) {
+      return MoogFilter.Type.LP;
+    } else if (filterMode == 1) {
+      return MoogFilter.Type.HP;
+    } else if (filterMode == 2) {
+      return MoogFilter.Type.BP;
+    }
+
+    return MoogFilter.Type.LP;
   }
 
   void noteOn(float duration) {
     _adsr.noteOn();
   }
-  
-  void noteOff() { 
+
+  void noteOff() {
     _adsr.noteOff();
     _adsr.unpatchAfterRelease(out);
   }
 }
-
-
-
