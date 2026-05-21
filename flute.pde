@@ -3,7 +3,6 @@ import ddf.minim.ugens.*;
 import processing.serial.*;
 
 Minim minim;
-AudioOutput out;
 InstrumentModule flute;
 
 void setup(){

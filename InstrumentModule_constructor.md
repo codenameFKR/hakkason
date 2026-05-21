@@ -4,33 +4,37 @@ graph TD;
     %% コンストラクタの処理フロー
     subgraph Constructor ["<span style='white-space: nowrap;'>インスタンス生成時の処理(コンストラクタ)</span>"]
     direction TB
-        Start((("開始"))) --> Args["引数の受け取り<br>wave, baseFreq, harmonics, cutoff, res, vol, atk, dec, sus, rel"]
+        Start((("開始"))) --> Args["引数の受け取り<br>waves配列, baseFreq, harmonics配列, cutoff, res,<br>filterMode, fcoRate, fcoAmount, vol, atk, dec, sus, rel"]
         
         Args --> Assign["メンバ変数へ数値を記憶<br>_vol, _atk, _dec, _sus, _rel"]
         
-        Assign --> InitSummer["Summer(ミキサー)と<br>Oscil(波形)配列の初期化"]
+        Assign --> CheckNulls["waves, harmonicsが<br>nullまたは空の場合は初期値を設定"]
         
-        InitSummer --> LoopStart{"ループ処理<br>i = 0 から harmonics.length まで"}
+        CheckNulls --> InitSummer["Summer(ミキサー)の初期化と<br>Oscil(波形)配列のメモリ確保<br>(要素数 = waves.length * harmonics.length)"]
         
-        LoopStart -- 条件を満たす --> Calc["倍音の周波数(freq)と<br>音量(amp)を計算"]
+        InitSummer --> OuterLoopStart{"波形のループ処理<br>w = 0 から waves.length まで"}
         
-        Calc --> Cond{"waveの文字列判定"}
+        OuterLoopStart -- 条件を満たす --> GetWaveType["文字列から波形タイプを取得<br>(getWaveform)"]
         
-        Cond -- "SINE" --> WSine["_waves[i] = サイン波生成"]
-        Cond -- "SAW" --> WSaw["_waves[i] = ノコギリ波生成"]
-        Cond -- "SQUARE" --> WSquare["_waves[i] = 矩形波生成"]
-        Cond -- "TRIANGLE" --> WTri["_waves[i] = 三角波生成"]
+        GetWaveType --> InnerLoopStart{"倍音のループ処理<br>i = 0 から harmonics.length まで"}
         
-        WSine --> PatchSummer["生成した波形を<br>_summerに接続(.patch)"]
-        WSaw --> PatchSummer
-        WSquare --> PatchSummer
-        WTri --> PatchSummer
+        InnerLoopStart -- 条件を満たす --> Calc["倍音の周波数(freq)と<br>音量(amp)を計算<br>※音割れ防止のためampを波形数で割る"]
         
-        PatchSummer --> LoopStart
+        Calc --> CreateOscil["_waves[index] = 波形を生成<br>new Oscil(freq, amp, waveform)"]
         
-        LoopStart -- ループ終了 --> FilterInit["フィルターの準備<br>_filter = new MoogFilter(cutoff, res, LP)"]
+        CreateOscil --> PatchSummer["生成した波形を<br>_summerに接続(.patch)"]
         
-        FilterInit --> ADSRInit["ADSRエンベロープの生成<br>_adsr = new ADSR(vol, atk, dec, sus, rel)"]
+        PatchSummer --> InnerLoopStart
+        
+        InnerLoopStart -- ループ終了 --> OuterLoopStart
+        
+        OuterLoopStart -- ループ終了 --> FilterInit["フィルターの準備<br>_filter = new MoogFilter(...)<br>※getFilterTypeでLP/HP/BPを判定"]
+        
+        FilterInit --> CheckFCO{"fcoRate > 0 かつ<br>fcoAmount > 0 か？"}
+        
+        CheckFCO -- 満たす(Yes) --> SetupFCO["_fco(LFO用Oscil)を生成し<br>_filter.frequency(カットオフ)に接続"]
+        CheckFCO -- 満たさない(No) --> ADSRInit["ADSRエンベロープの生成<br>_adsr = new ADSR(vol, atk, dec, sus, rel)"]
+        SetupFCO --> ADSRInit
         
         ADSRInit --> PatchFinal["音声のルーティング設定<br>_summer -> _filter -> _adsr -> out"]
         
