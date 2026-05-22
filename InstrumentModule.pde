@@ -1,47 +1,47 @@
+// 音色設定用のパラメータオブジェクト
+class InstrumentConfig {
+  AudioOutput out;
+
+  String[] waves;
+  float baseFreq;
+  float[] harmonics;
+
+  float cutoff;
+  float res;
+  int filterMode;
+
+  float fcoRate;
+  float fcoAmount;
+
+  float vol;
+  float atk;
+  float dec;
+  float sus;
+  float rel;
+}
+
 // 楽器モジュール（クラス）の設計図
 // Minim の Instrument として使えるように implements Instrument を付ける
 class InstrumentModule implements Instrument {
-
-  AudioOutput out;
+  AudioOutput _out;
   // 複数の波形をまとめて1つの音にするためのミキサー
   Summer _summer;
-
   // 実際に音を鳴らす波形オシレーターの配列
   Oscil[] _waves;
-
   // フィルターのカットオフ周波数を揺らすためのオシレーター
   Oscil _fco;
-
   // 音色を変化させるフィルター
   MoogFilter _filter;
-
   // 音の立ち上がり、減衰、持続、余韻を制御するADSR
   ADSR _adsr;
 
-  // 音量
-  float _vol;
-
-  // Attack：音の立ち上がり時間
-  float _atk;
-
-  // Decay：最大音量からSustain音量まで下がる時間
-  float _dec;
-
-  // Sustain：音を押している間に保たれる音量
-  float _sus;
-
-  // Release：音を離したあとの余韻の長さ
-  float _rel;
-
   // 波形を複数組み合わせる版のコンストラクタ
-  InstrumentModule(String[] waves, float baseFreq, float[] harmonics, float cutoff, float res, int filterMode, float fcoRate, float fcoAmount, float vol, float atk, float dec, float sus, float rel) {
+  InstrumentModule(InstrumentConfig config) {
+    _out = config.out;
 
-    // 受け取った音量とADSRの値を保存する
-    _vol = vol;
-    _atk = atk;
-    _dec = dec;
-    _sus = sus;
-    _rel = rel;
+    String[] waves = config.waves;
+    float baseFreq = config.baseFreq;
+    float[] harmonics = config.harmonics;
 
     // 波形が指定されていない場合は、初期値としてSINE波を使う
     if (waves == null || waves.length == 0) {
@@ -78,7 +78,7 @@ class InstrumentModule implements Instrument {
 
         // 倍音ごとの音量を決める
         // 複数波形を足すと音量が大きくなりすぎるので、波形数で割る
-        float amp = vol * harmonics[i] / waves.length;
+        float amp = config.vol  * harmonics[i] / waves.length;
 
         // Oscilを作る
         _waves[index] = new Oscil(freq, amp, waveform);
@@ -93,28 +93,38 @@ class InstrumentModule implements Instrument {
 
     // フィルターを作る
     // filterMode によって LP, HP, BP を切り替える
-    _filter = new MoogFilter(cutoff, res, getFilterType(filterMode));
+    _filter = new MoogFilter(
+      config.cutoff,
+      config.res,
+      getFilterType(config.filterMode)
+    );
 
     // FCOを使う場合
     // fcoRate は揺れる速さ、fcoAmount は揺れ幅
-    if (fcoRate > 0 && fcoAmount > 0) {
+    if (config.fcoRate > 0 && config.fcoAmount > 0) {
 
       // フィルターのカットオフ周波数を揺らすためのOscilを作る
-      _fco = new Oscil(fcoRate, fcoAmount, Waves.SINE);
+      _fco = new Oscil(config.fcoRate, config.fcoAmount, Waves.SINE);
 
       // 揺れの中心を cutoff の値にする
-      _fco.offset.setLastValue(cutoff);
+      _fco.offset.setLastValue(config.cutoff);
 
       // FCOをフィルターのfrequencyに接続する
       _fco.patch(_filter.frequency);
     }
 
     // ADSRを作る
-    _adsr = new ADSR(vol, atk, dec, sus, rel);
+    _adsr = new ADSR(
+      config.vol,
+      config.atk,
+      config.dec,
+      config.sus,
+      config.rel
+    );
 
     // 音の流れを接続する
-    // Oscilたち → Summer → Filter → ADSR → out
-    _summer.patch(_filter).patch(_adsr).patch(out);
+    // Oscilたち → Summer → Filter → ADSR → _out
+    _summer.patch(_filter).patch(_adsr).patch(_out);
   }
 
   // 文字列で指定された波形名をMinimのWaveformに変換する関数
@@ -173,7 +183,7 @@ class InstrumentModule implements Instrument {
     // ADSRのReleaseを開始する
     _adsr.noteOff();
 
-    // Releaseが終わったあと、outから切り離す
-    _adsr.unpatchAfterRelease(out);
+    // Releaseが終わったあと、_outから切り離す
+    _adsr.unpatchAfterRelease(_out);
   }
 }

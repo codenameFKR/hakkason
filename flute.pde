@@ -2,6 +2,7 @@ import ddf.minim.*;
 import ddf.minim.ugens.*;
 import processing.serial.*;
 
+AudioOutput out;
 Minim minim;
 InstrumentModule flute;
 
@@ -45,17 +46,24 @@ void keyPressed() {
   switch (key)
   {
     case 'p':
-      //フルートの音色
-      //倍音の数とそれぞれの音量を0.0-1.0の間で設定
-      float[] fluteHarmonics = {0.8, 1.0, 0.6, 0.4, 0.2}; 
+      InstrumentConfig flute = new InstrumentConfig();
 
-      flute = new InstrumentModule(
-        "SINE", 941.0, fluteHarmonics, 6000.0, 0.0,  
-        1.0, 0.2, 0.5, 0.3, 0.3                 
-      );
+      flute.out = out;
+      flute.waves = new String[] { "SINE", "TRIANGLE" };
+      flute.baseFreq = 440.0;
+      flute.harmonics = new float[] { 1.0, 0.4, 0.2 };
+      flute.cutoff = 6000.0;
+      flute.res = 0.1;
+      flute.filterMode = 0;
+      flute.fcoRate = 0.0;
+      flute.fcoAmount = 0.0;
+      flute.vol = 0.7;
+      flute.atk = 0.2;
+      flute.dec = 0.4;
+      flute.sus = 0.5;
+      flute.rel = 0.8;
 
-      out.playNote(0.0, 1.0, flute);
-      break;
+      out.playNote(0.0, 1.0, new InstrumentModule(flute));
   }
 }
 
