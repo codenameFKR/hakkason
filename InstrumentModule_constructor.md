@@ -4,11 +4,11 @@ graph TD;
     %% コンストラクタの処理フロー
     subgraph Constructor ["<span style='white-space: nowrap;'>インスタンス生成時の処理(コンストラクタ)</span>"]
     direction TB
-        Start((("開始"))) --> Args["引数の受け取り<br>waves配列, baseFreq, harmonics配列, cutoff, res,<br>filterMode, fcoRate, fcoAmount, vol, atk, dec, sus, rel"]
+        Start((("開始"))) --> Args["引数の受け取り<br>InstrumentConfig config"]
         
-        Args --> Assign["メンバ変数へ数値を記憶<br>_vol, _atk, _dec, _sus, _rel"]
+        Args --> Extract["設定の取り出し・保持<br>_out = config.out<br>waves, baseFreq, harmonicsの取得"]
         
-        Assign --> CheckNulls["waves, harmonicsが<br>nullまたは空の場合は初期値を設定"]
+        Extract --> CheckNulls["waves, harmonicsが<br>nullまたは空の場合は初期値を設定"]
         
         CheckNulls --> InitSummer["Summer(ミキサー)の初期化と<br>Oscil(波形)配列のメモリ確保<br>(要素数 = waves.length * harmonics.length)"]
         
@@ -33,10 +33,10 @@ graph TD;
         FilterInit --> CheckFCO{"fcoRate > 0 かつ<br>fcoAmount > 0 か？"}
         
         CheckFCO -- 満たす(Yes) --> SetupFCO["_fco(LFO用Oscil)を生成し<br>_filter.frequency(カットオフ)に接続"]
-        CheckFCO -- 満たさない(No) --> ADSRInit["ADSRエンベロープの生成<br>_adsr = new ADSR(vol, atk, dec, sus, rel)"]
+        CheckFCO -- 満たさない(No) --> ADSRInit["ADSRエンベロープの生成<br>_adsr = new ADSR(config.vol, config.atk, config.dec, config.sus, config.rel)"]
         SetupFCO --> ADSRInit
         
-        ADSRInit --> PatchFinal["音声のルーティング設定<br>_summer -> _filter -> _adsr -> out"]
+        ADSRInit --> PatchFinal["音声のルーティング設定<br>_summer -> _filter -> _adsr -> _out"]
         
         PatchFinal --> End1((("生成完了")))
     end
