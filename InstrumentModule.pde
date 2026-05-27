@@ -14,6 +14,7 @@ class InstrumentConfig {
   float fcoAmount;
 
   float vol;
+  float noiseVol;//追加
   float atk;
   float dec;
   float sus;
@@ -89,6 +90,12 @@ class InstrumentModule implements Instrument {
         // 次のOscilを配列に入れるため、番号を進める
         index++;
       }
+    }
+
+    // ホワイトノイズを混ぜる
+    if (config.noiseVol > 0) {
+      _noise = new Noise(config.noiseVol, Noise.Tint.WHITE);
+      _noise.patch(_summer);
     }
 
     // フィルターを作る
