@@ -35,6 +35,9 @@ class InstrumentModule implements Instrument {
   MoogFilter _filter;
   // 音の立ち上がり、減衰、持続、余韻を制御するADSR
   ADSR _adsr;
+  // ホワイトノイズ用
+  Noise _noise;
+
 
   // 波形を複数組み合わせる版のコンストラクタ
   InstrumentModule(InstrumentConfig config) {

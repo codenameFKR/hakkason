@@ -8,26 +8,22 @@ InstrumentModule flute;
 
 // 各音の高さ
 String [] melody = {
-  "A5", "D6", "C6", "G5", "A5", "C6", "G5"
-};
-
-String [] melody2 = {
-  "A4", "D5", "C5", "G4", "A4", "C5", "G4"
+  "C5", "C5", "G5", "G5", "A5", "A5", "G5","F5", "F5", "E5", "E5", "D5", "D5", "C5"
 };
 
 // 各音の長さ（拍）
 float [] duration = {
-  0.5f, 0.5f, 2.0f, 0.5f, 0.5f, 0.5f, 2.0f
+  0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 1.0f
 };
 
 // 各音の開始位置
 float [] startTime = {
-  0.0f, 0.5f, 1.0f, 3.0f, 3.5f, 4.0f, 4.5f
+  0.0f, 0.5f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 4.0f, 4.5f, 5.0f, 5.5f, 6.0f, 6.5f, 7.0f
 };
 
 // 各音の音量
 float[] amplitudes = {
-  0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f
+  0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f
 };
 
 void setup(){
@@ -66,73 +62,37 @@ void draw(){
   }
 }
 
-void playSong(String pitch) {
+void playSong() {
   out.pauseNotes();
 
   for (int i = 0; i < melody.length; i++) {
     InstrumentConfig flute = new InstrumentConfig();
 
     flute.out = out;
-    flute.waves = new String[] { "SINE", "SINE", "SINE", "TRIANGLE", "TRIANGLE" };
+    flute.waves = new String[] { "SINE", "SINE", "SINE", "SINE", "SAW" };
 
     // melody[i] の音階名を周波数に変換して、この音の基音にする
-    flute.baseFreq = Frequency.ofPitch(pitch).asHz();
+    flute.baseFreq = Frequency.ofPitch(melody[i]).asHz();
+    // flute.baseFreq = Frequency.ofPitch(pitch).asHz();
 
-    flute.harmonics = new float[] { 0.7, 0.7, 0.1, 0.05, 0.01 };
-    flute.cutoff = 4000.0;
+    flute.harmonics = new float[] { 0.8, 0.7, 0.1, 0.05, 0.01 };
+    flute.cutoff = 1300.0;
     flute.res = 0.0;
     flute.filterMode = 0;
-    flute.fcoRate = 4.0;
-    flute.fcoAmount = 500.0;
+    flute.fcoRate = 0.0;
+    flute.fcoAmount = 0.0;
 
     // amplitudes[i] を使って、音ごとの強弱を変える
     flute.vol = amplitudes[i];
 
-    flute.atk = 0.05;
+    flute.atk = 0.03;
     flute.dec = 0.0;
-    flute.sus = 0.8;
-    flute.rel = 0.2;
+    flute.sus = 0.7;
+    flute.rel = 0.3;
 
     out.playNote(
-      0.0,
-      0.2,
-      new InstrumentModule(flute)
-    );
-  }
-
-  out.resumeNotes();
-}
-
-void playSong2(String pitch2) {
-  out.pauseNotes();
-
-  for (int i = 0; i < melody.length; i++) {
-    InstrumentConfig flute = new InstrumentConfig();
-
-    flute.out = out;
-    flute.waves = new String[] { "SINE", "SINE", "SINE", "TRIANGLE", "TRIANGLE" };
-
-    // melody2[i] の音階名を周波数に変換して、この音の基音にする
-    flute.baseFreq = Frequency.ofPitch(pitch2).asHz();
-
-    flute.harmonics = new float[] { 0.7, 0.8, 0.1, 0.05, 0.01 };
-    flute.cutoff = 4000.0;
-    flute.res = 0.0;
-    flute.filterMode = 0;
-    flute.fcoRate = 1.0;
-    flute.fcoAmount = 500.0;
-
-    // amplitudes[i] を使って、音ごとの強弱を変える
-    flute.vol = amplitudes[i];
-
-    flute.atk = 0.05;
-    flute.dec = 0.0;
-    flute.sus = 0.8;
-    flute.rel = 0.2;
-
-    out.playNote(
-      0.0,
-      0.2,
+      startTime[i],
+      duration[i],
       new InstrumentModule(flute)
     );
   }
@@ -143,44 +103,36 @@ void playSong2(String pitch2) {
 void keyPressed() {
   switch (key) {
     case 'a':
-      playSong("C5");
-      //playSong2("C4");
+      playSong();
       break;
 
-    case 's':
-      playSong("D5");
-      //playSong2("D4");
-      break;
+    // case 's':
+    //   playSong("D5");
+    //   break;
 
-    case 'd':
-      playSong("E5");
-      //playSong2("E4");
-      break;
+    // case 'd':
+    //   playSong("E5");
+    //   break;
 
-    case 'f':
-      playSong("F5");
-      //playSong2("F4");
-      break;
+    // case 'f':
+    //   playSong("F5");
+    //   break;
 
-    case 'g':
-      playSong("G5");
-      //playSong2("G4");
-      break;
+    // case 'g':
+    //   playSong("G5");
+    //   break;
 
-    case 'h':
-      playSong("A5");
-      //playSong2("A4");
-      break;
+    // case 'h':
+    //   playSong("A5");
+    //   break;
 
-    case 'j':
-      playSong("B5");
-      //playSong2("B4");
-      break;
+    // case 'j':
+    //   playSong("B5");
+    //   break;
 
-    case 'k':
-      playSong("C6");
-      //playSong2("C5");
-      break;
+    // case 'k':
+    //   playSong("C6");
+    //   break;
   }
 }
 
