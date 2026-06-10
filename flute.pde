@@ -75,7 +75,7 @@ void playSong() {
     flute.baseFreq = Frequency.ofPitch(melody[i]).asHz();
     // flute.baseFreq = Frequency.ofPitch(pitch).asHz();
 
-    flute.harmonics = new float[] { 0.8, 0.7, 0.1, 0.05, 0.01 };
+    flute.harmonics = new float[] { 0.8, 0.1, 0.1, 0.05, 0.01 };
     flute.cutoff = 1300.0;
     flute.res = 0.0;
     flute.filterMode = 0;
