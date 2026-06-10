@@ -14,14 +14,17 @@ class InstrumentConfig {
   float fcoAmount;
 
   float vol;
-  float noiseVol;//追加
   float atk;
   float dec;
   float sus;
   float rel;
+
+  // ↓ 追加
+  float vibratoRate  = 0.0; // 揺れる速さ (Hz) 0で無効
+  float vibratoDepth = 0.0; // 揺れ幅 (Hz)
 }
 
-// 楽器モジュール（クラス）の設計図
+// 楽器モジュール (クラス) の設計図
 // Minim の Instrument として使えるように implements Instrument を付ける
 class InstrumentModule implements Instrument {
   AudioOutput _out;
@@ -35,8 +38,7 @@ class InstrumentModule implements Instrument {
   MoogFilter _filter;
   // 音の立ち上がり、減衰、持続、余韻を制御するADSR
   ADSR _adsr;
-  // ホワイトノイズ用
-  Noise _noise;
+  Oscil _vibrato; // ← 追加
 
 
   // 波形を複数組み合わせる版のコンストラクタ
@@ -95,12 +97,6 @@ class InstrumentModule implements Instrument {
       }
     }
 
-    // ホワイトノイズを混ぜる
-    if (config.noiseVol > 0) {
-      _noise = new Noise(config.noiseVol, Noise.Tint.WHITE);
-      _noise.patch(_summer);
-    }
-
     // フィルターを作る
     // filterMode によって LP, HP, BP を切り替える
     _filter = new MoogFilter(
@@ -121,6 +117,22 @@ class InstrumentModule implements Instrument {
 
       // FCOをフィルターのfrequencyに接続する
       _fco.patch(_filter.frequency);
+    }
+
+    // ↓ FCOブロックの後ろに追加
+    // ビブラート：各オシレーターの周波数を揺らす
+    if (config.vibratoRate > 0 && config.vibratoDepth > 0)
+    {
+      _vibrato = new Oscil(config.vibratoRate, config.vibratoDepth, Waves.SINE);
+      for (int i = 0; i < _waves.length; i++)
+      {
+        float freq = _waves[i].frequency.getLastValue();
+        // 倍音ごとに揺れ幅を周波数比で調整する
+        float scaledDepth = config.vibratoDepth * (freq / config.baseFreq); // ← 追加
+        _vibrato = new Oscil(config.vibratoRate, scaledDepth, Waves.SINE);  // ← 各音に個別に作る
+        _vibrato.offset.setLastValue(freq);
+        _vibrato.patch(_waves[i].frequency);
+      }
     }
 
     // ADSRを作る

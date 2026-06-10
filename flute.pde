@@ -23,13 +23,13 @@ float [] startTime = {
 
 // 各音の音量
 float[] amplitudes = {
-  0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f
+  1.0f, 0.9f, 1.0f, 0.9f, 1.0f, 0.9f, 1.0f, 1.0f, 0.9f, 1.0f, 0.9f, 1.0f, 0.9f, 1.0f
 };
 
 void setup(){
   size(400, 400);
   minim = new Minim(this);
-  out = minim.getLineOut();
+  out = minim.getLineOut(Minim.STEREO, 1024);
   pixelDensity(1);
 
   //指揮者用Arduinoとのシリアル通信設定
@@ -69,34 +69,36 @@ void playSong() {
     InstrumentConfig flute = new InstrumentConfig();
 
     flute.out = out;
-    flute.waves = new String[] { "SINE", "SINE", "SINE", "SINE", "SAW" };
+    flute.waves = new String[] { "SINE", "SINE", "SINE", "SINE", "SINE" };
 
     // melody[i] の音階名を周波数に変換して、この音の基音にする
     flute.baseFreq = Frequency.ofPitch(melody[i]).asHz();
     // flute.baseFreq = Frequency.ofPitch(pitch).asHz();
 
-    flute.harmonics = new float[] { 0.8, 0.1, 0.1, 0.05, 0.01 };
-    flute.cutoff = 1300.0;
+    flute.harmonics = new float[] { 1.0, 1.0, 0.05, 0.01, 0.002 };
+    flute.cutoff = 1000.0;
     flute.res = 0.0;
     flute.filterMode = 0;
-    flute.fcoRate = 0.0;
-    flute.fcoAmount = 0.0;
 
     // amplitudes[i] を使って、音ごとの強弱を変える
     flute.vol = amplitudes[i];
 
-    flute.atk = 0.03;
-    flute.dec = 0.0;
+    //flute.noiseVol = amplitudes[i] * 0.05;
+
+    flute.atk = 0.02;
+    flute.dec = 0.5;
     flute.sus = 0.7;
-    flute.rel = 0.3;
+    flute.rel = 0.1;
+
+    flute.vibratoRate  = 8.0;
+    flute.vibratoDepth = 4.0;
 
     out.playNote(
       startTime[i],
-      duration[i],
+      duration[i] * 0.95,
       new InstrumentModule(flute)
     );
   }
-
   out.resumeNotes();
 }
 
@@ -135,5 +137,3 @@ void keyPressed() {
     //   break;
   }
 }
-
-
