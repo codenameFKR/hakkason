@@ -30,6 +30,7 @@ void setup(){
   size(400, 400);
   minim = new Minim(this);
   out = minim.getLineOut(Minim.STEREO, 1024);
+  out.setTempo(60);
   pixelDensity(1);
 
   //指揮者用Arduinoとのシリアル通信設定
