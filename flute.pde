@@ -30,26 +30,7 @@ void setup(){
   size(400, 400);
   minim = new Minim(this);
   out = minim.getLineOut(Minim.STEREO, 1024);
-  out.setTempo(60);
   pixelDensity(1);
-
-  //指揮者用Arduinoとのシリアル通信設定
-  //port = new Serial(this, "/dev/cu.usbmodemXXXXX", xxxx);
-
-  // //フルートの音色
-  // //倍音の数とそれぞれの音量を0.0-1.0の間で設定
-  // float[] fluteHarmonics = {1.0, 0.4, 0.1}; 
-  // out.playNote(0.0, 1.0, new InstrumentModule(
-  //   "波形", 周波数, 倍音配列, カットオフ周波数, レゾナンス,  
-  //   音量, atk, dec, sus, rel                  
-  // ));
-
-  //トランペットの音色
-  //trumpet[] trumpetHarmonics = {1.0, 0.4, 0.1}; 
-  // out.playNote(0.0, 1.0, new InstrumentModule(
-  //   "波形", 周波数, 倍音配列, カットオフ周波数, レゾナンス,  
-  //   音量, atk, dec, sus, rel                  
-  // ));
 }
 void draw(){
   background(0);
@@ -108,33 +89,5 @@ void keyPressed() {
     case 'a':
       playSong();
       break;
-
-    // case 's':
-    //   playSong("D5");
-    //   break;
-
-    // case 'd':
-    //   playSong("E5");
-    //   break;
-
-    // case 'f':
-    //   playSong("F5");
-    //   break;
-
-    // case 'g':
-    //   playSong("G5");
-    //   break;
-
-    // case 'h':
-    //   playSong("A5");
-    //   break;
-
-    // case 'j':
-    //   playSong("B5");
-    //   break;
-
-    // case 'k':
-    //   playSong("C6");
-    //   break;
   }
 }
